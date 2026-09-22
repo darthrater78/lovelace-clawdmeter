@@ -2,6 +2,7 @@ name: Validate
 
 on:
   push:
+    branches: ["**"] # not just `push:` — that also matches tag pushes
   pull_request:
   schedule:
     - cron: "0 6 * * *"
@@ -10,14 +11,22 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   hacs:
     name: HACS
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
-      - uses: hacs/action@d556e736723344f83838d08488c983a15381059a # 22.5.0
+      # Intentionally unpinned: HACS's own guidance is to run this action at
+      # @main so validation always checks current HACS rules — a pinned SHA
+      # would silently validate against stale requirements.
+      - uses: hacs/action@main
         with:
           category: plugin

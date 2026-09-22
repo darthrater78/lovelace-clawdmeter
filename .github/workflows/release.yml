@@ -3,18 +3,70 @@ name: Release
 # Attaches the card file to a published GitHub release so HACS installs exactly
 # that asset. HACS reads the *version* from the release tag itself — plugins have
 # no version field in hacs.json — so cutting a release (e.g. from the Release
-# Drafter draft) is all that is needed to publish a new version.
+# Drafter draft) is all that is needed to publish a new version. Version is
+# tag-derived: there is no separate "declared version in source" to check the
+# tag against.
 on:
   release:
     types: [published]
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: release-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
 
 jobs:
+  gate:
+    name: Verify release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Verify tag is on default branch
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          if ! git merge-base --is-ancestor "refs/tags/$TAG" "origin/$DEFAULT_BRANCH"; then
+            echo "::error::Tag $TAG is not on $DEFAULT_BRANCH. Releases come from the default branch only."
+            exit 1
+          fi
+
+      - name: Require a passing Validate run for this commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          sha=$(git rev-parse "refs/tags/$TAG^{commit}")
+          for _ in $(seq 1 20); do
+            runs=$(gh api "repos/${REPO}/actions/workflows/validate.yml/runs?head_sha=${sha}&per_page=100" \
+              --jq '.workflow_runs[] | "\(.status) \(.conclusion)"')
+            printf '%s\n' "$runs" | awk '$2 == "success" { hit = 1 } END { exit !hit }' && exit 0
+            printf '%s\n' "$runs" | grep -q '^in_progress\|^queued' && { sleep 30; continue; }
+            break
+          done
+          echo "::error::Validate never passed for ${sha}. Trigger it (workflow_dispatch) and re-publish once green."
+          exit 1
+
   release:
     name: Attach card to release
+    needs: gate
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -24,3 +76,13 @@ jobs:
         uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
         with:
           files: clawdmeter.js
+
+      - name: Verify asset was attached
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          gh release view "$TAG" --repo "$REPO" --json assets --jq '.assets[].name' | grep -qx clawdmeter.js \
+            || { echo "::error::clawdmeter.js was not attached to release $TAG."; exit 1; }
