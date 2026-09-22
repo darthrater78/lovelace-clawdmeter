@@ -642,6 +642,35 @@ const ELEMENTS = [
     reset: "opus_reset",
     on: false,
   },
+  // Surface breakdown of the weekly limit (ha-clawdmeter 0.1.0+). Each is a
+  // % of the weekly limit and sums to the "week" bar above; sonnet/opus stay
+  // above for accounts still on an integration version that predates this
+  // split. A bar auto-hides via _has() when its entity doesn't exist, so both
+  // generations of entities can coexist here without version detection.
+  {
+    id: "weekly_claude_code",
+    kind: "bar",
+    usage: "weekly_claude_code_usage",
+    on: false,
+  },
+  {
+    id: "weekly_chat",
+    kind: "bar",
+    usage: "weekly_chat_usage",
+    on: false,
+  },
+  {
+    id: "weekly_cowork",
+    kind: "bar",
+    usage: "weekly_cowork_usage",
+    on: false,
+  },
+  {
+    id: "weekly_other",
+    kind: "bar",
+    usage: "weekly_other_usage",
+    on: false,
+  },
   { id: "extra", kind: "bar", usage: "extra_usage", on: false },
   { id: "burn", kind: "stat", entity: "burn_rate_5m", on: true },
   { id: "burn30", kind: "stat", entity: "burn_rate_30m", on: false },
@@ -685,6 +714,10 @@ const LANG = {
       week: "Week",
       sonnet: "Sonnet (weekly)",
       opus: "Opus (weekly)",
+      weekly_claude_code: "Claude Code (weekly)",
+      weekly_chat: "Chat (weekly)",
+      weekly_cowork: "Cowork (weekly)",
+      weekly_other: "Other (weekly)",
       extra: "Extra usage",
       burn: "Burn rate 5m",
       burn30: "Burn rate 30m",
@@ -737,6 +770,10 @@ const LANG = {
       week: "Woche",
       sonnet: "Sonnet (Woche)",
       opus: "Opus (Woche)",
+      weekly_claude_code: "Claude Code (Woche)",
+      weekly_chat: "Chat (Woche)",
+      weekly_cowork: "Cowork (Woche)",
+      weekly_other: "Sonstiges (Woche)",
       extra: "Zusatznutzung",
       burn: "Verbrauchsrate 5m",
       burn30: "Verbrauchsrate 30m",

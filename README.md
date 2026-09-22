@@ -35,7 +35,7 @@ The custom element is `clawdmeter-card` (use `type: custom:clawdmeter-card`).
 - **Animated pixel-art creature** — its mood (idle → heavy) follows your burn rate, and the frame glows green/orange/red with the runway pace.
 - **Two layouts** — `panel` and `hero`, switchable in the visual editor.
 - **Visual editor, no YAML** — pick your Clawdmeter account and every entity is filled in automatically (matched by the integration's translation keys, so it is language-independent).
-- **Session, weekly, Sonnet & Opus bars** plus burn rate, time-to-limit, ETA, pace and peak values.
+- **Session, weekly, per-surface weekly (Claude Code / Chat / Cowork / Other), Sonnet & Opus bars** plus burn rate, time-to-limit, ETA, pace and peak values.
 - **Theme-aware** — adapts to light/dark themes; turn the background off to blend into your own theme.
 - **English & German**, following your Home Assistant language.
 
@@ -69,7 +69,10 @@ translation keys, so it is language‑independent). You can also choose the **la
 (`panel` / `hero`), set an optional **title**, and toggle each element via checkboxes, grouped as:
 
 - **General** — title, creature, header line, background
-- **Bars** — session, week, time‑to‑limit, Sonnet, Opus, extra usage
+- **Bars** — session, week, time‑to‑limit, weekly usage by surface (Claude Code, Chat, Cowork,
+  Other — `ha-clawdmeter` 0.1.0+), Sonnet, Opus, extra usage. A bar only appears if the
+  matching entity exists on your integration version, so Sonnet/Opus and the surface bars
+  can coexist across an upgrade without any configuration change.
 - **Values** — burn rate (5m / 30m), time to limit, limit ETA, buffer to reset, pace,
   peak today, session reset‑in
 
